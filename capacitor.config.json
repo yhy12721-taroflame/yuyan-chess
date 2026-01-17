@@ -1,0 +1,26 @@
+{
+  "appId": "com.yuyan.chess",
+  "appName": "yu_yan chess",
+  "webDir": "public",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "cleartext": [
+      "localhost",
+      "127.0.0.1"
+    ]
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0,
+      "launchAutoHide": true,
+      "backgroundColor": "#667eea",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "dark",
+      "backgroundColor": "#667eea"
+    }
+  }
+}

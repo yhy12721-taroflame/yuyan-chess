@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>象棋線上對戰 - 獨立版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .panel h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #da190b;
+        }
+
+        .status-box {
+            background: #f5f5f5;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .status-box.online {
+            border-left-color: #4CAF50;
+            background: #f1f8f4;
+        }
+
+        .status-box.offline {
+            border-left-color: #f44336;
+            background: #fef5f5;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .status-indicator.online {
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.offline {
+            background: #f44336;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .room-list {
+            background: #f5f5f5;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .room-item {
+            background: white;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .room-item:hover {
+            background: #f9f9f9;
+            transform: translateX(5px);
+        }
+
+        .room-item.selected {
+            background: #e8eaf6;
+            border-left-color: #4CAF50;
+        }
+
+        .room-id {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .room-info {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .player-list {
+            background: #f5f5f5;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
+        .player-item {
+            padding: 8px;
+            margin-bottom: 5px;
+            background: white;
+            border-radius: 3px;
+            border-left: 3px solid #667eea;
+            font-size: 13px;
+        }
+
+        .player-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .player-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .player-status {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+
+        .player-status.online {
+            background: #4CAF50;
+        }
+
+        .player-status.offline {
+            background: #f44336;
+        }
+
+        .game-board {
+            background: #f4e4c1;
+            border: 3px solid #8b4513;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .board-cell {
+            aspect-ratio: 1;
+            background: #e8d4b8;
+            border: 1px solid #8b4513;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .board-cell:hover {
+            background: #d4c4a8;
+            transform: scale(1.05);
+        }
+
+        .board-cell.selected {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .move-history {
+            background: #f5f5f5;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+
+        .move-item {
+            padding: 5px;
+            margin-bottom: 3px;
+            background: white;
+            border-radius: 3px;
+            border-left: 2px solid #667eea;
+        }
+
+        .move-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .message-box {
+            background: #f5f5f5;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+            min-height: 60px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 12px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .message-item {
+            padding: 3px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .message-item:last-child {
+            border-bottom: none;
+        }
+
+        .message-item.info {
+            color: #667eea;
+        }
+
+        .message-item.success {
+            color: #4CAF50;
+        }
+
+        .message-item.error {
+            color: #f44336;
+        }
+
+        .message-item.warning {
+            color: #ff9800;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .footer {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .clear-btn {
+            width: 100%;
+            margin-top: 10px;
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .clear-btn:hover {
+            background: #d0d0d0;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab-btn {
+            padding: 10px 15px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-weight: bold;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 頁面標題 -->
+        <div class="header">
+            <h1>🎮 象棋線上對戰 - 獨立版</h1>
+            <p>無需服務器，直接在瀏覽器中遊玩</p>
+        </div>
+
+        <!-- 主要內容 -->
+        <div class="main-content">
+            <!-- 左側：房間和玩家管理 -->
+            <div class="panel">
+                <h2>房間和玩家</h2>
+
+                <!-- 玩家信息 -->
+                <div class="form-group">
+                    <label>你的名稱</label>
+                    <input type="text" id="player-name" placeholder="輸入你的名稱" value="玩家">
+                </div>
+
+                <!-- 玩家狀態 -->
+                <div class="status-box online" id="player-status">
+                    <span class="status-indicator online"></span>
+                    <span>狀態：<strong>在線</strong></span>
+                </div>
+
+                <!-- 房間操作 -->
+                <div class="form-group">
+                    <label>房間 ID</label>
+                    <input type="text" id="room-id" placeholder="輸入房間 ID 或留空自動生成">
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-success" onclick="createRoom()">創建房間</button>
+                    <button class="btn-primary" onclick="joinRoom()">加入房間</button>
+                </div>
+
+                <!-- 房間列表 -->
+                <div class="form-group">
+                    <label>可用房間</label>
+                    <div class="room-list" id="room-list">
+                        <div style="text-align: center; color: #999; padding: 20px;">暫無房間</div>
+                    </div>
+                </div>
+
+                <!-- 玩家列表 -->
+                <div class="form-group">
+                    <label>房間玩家</label>
+                    <div class="player-list" id="player-list">
+                        <div style="text-align: center; color: #999; padding: 10px;">未加入房間</div>
+                    </div>
+                </div>
+
+                <!-- 操作按鈕 -->
+                <div class="button-group">
+                    <button class="btn-danger" onclick="leaveRoom()">離開房間</button>
+                </div>
+            </div>
+
+            <!-- 右側：遊戲和統計 -->
+            <div class="panel">
+                <h2>遊戲</h2>
+
+                <!-- 標籤 -->
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="switchTab('game')">遊戲</button>
+                    <button class="tab-btn" onclick="switchTab('stats')">統計</button>
+                    <button class="tab-btn" onclick="switchTab('messages')">消息</button>
+                </div>
+
+                <!-- 遊戲標籤 -->
+                <div id="game-tab" class="tab-content active">
+                    <div class="form-group">
+                        <label>當前玩家</label>
+                        <div style="padding: 10px; background: #f5f5f5; border-radius: 5px; text-align: center; font-weight: bold;">
+                            <span id="current-player">紅方</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>棋盤</label>
+                        <div class="game-board">
+                            <div class="board-grid" id="board-grid"></div>
+                            <div class="button-group">
+                                <button class="btn-primary" onclick="resetGame()">重新開始</button>
+                                <button class="btn-primary" onclick="undoMove()">悔棋</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>移動歷史</label>
+                        <div class="move-history" id="move-history">
+                            <div style="text-align: center; color: #999;">暫無移動</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 統計標籤 -->
+                <div id="stats-tab" class="tab-content">
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-label">紅方棋子</div>
+                            <div class="stat-value" id="red-pieces">16</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">黑方棋子</div>
+                            <div class="stat-value" id="black-pieces">16</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">總移動數</div>
+                            <div class="stat-value" id="total-moves">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">遊戲時長</div>
+                            <div class="stat-value" id="game-time">0s</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>房間統計</label>
+                        <div style="background: #f5f5f5; padding: 10px; border-radius: 5px; font-size: 13px;">
+                            <div style="margin-bottom: 5px;">房間 ID：<strong id="current-room-id">-</strong></div>
+                            <div style="margin-bottom: 5px;">玩家數量：<strong id="player-count">0/2</strong></div>
+                            <div>房間狀態：<strong id="room-status">未加入</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 消息標籤 -->
+                <div id="messages-tab" class="tab-content">
+                    <div class="form-group">
+                        <label>系統消息</label>
+                        <div class="message-box" id="message-box">
+                            <div class="message-item info">系統已啟動</div>
+                        </div>
+                        <button class="clear-btn" onclick="clearMessages()">清空消息</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 頁腳 -->
+        <div class="footer">
+            <p>象棋線上對戰獨立版 | 無需服務器 | 直接在瀏覽器中遊玩</p>
+        </div>
+    </div>
+
+    <script>
+        // 全局變量
+        let currentRoom = null;
+        let currentPlayer = 'red';
+        let gameStartTime = null;
+        let gameTimer = null;
+        let rooms = {};
+        let moveHistory = [];
+        let boardState = initializeBoardState();
+
+        // 初始化棋盤
+        function initializeBoardState() {
+            const board = {};
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 10; j++) {
+                    board[`${i}-${j}`] = null;
+                }
+            }
+            // 初始化棋子位置（簡化版）
+            board['0-0'] = '紅車';
+            board['0-1'] = '紅馬';
+            board['0-2'] = '紅象';
+            board['0-3'] = '紅士';
+            board['0-4'] = '紅將';
+            board['0-5'] = '紅士';
+            board['0-6'] = '紅象';
+            board['0-7'] = '紅馬';
+            board['0-8'] = '紅車';
+
+            board['9-0'] = '黑車';
+            board['9-1'] = '黑馬';
+            board['9-2'] = '黑象';
+            board['9-3'] = '黑士';
+            board['9-4'] = '黑將';
+            board['9-5'] = '黑士';
+            board['9-6'] = '黑象';
+            board['9-7'] = '黑馬';
+            board['9-8'] = '黑車';
+
+            return board;
+        }
+
+        // 渲染棋盤
+        function renderBoard() {
+            const boardGrid = document.getElementById('board-grid');
+            boardGrid.innerHTML = '';
+
+            for (let j = 0; j < 10; j++) {
+                for (let i = 0; i < 9; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'board-cell';
+                    cell.textContent = boardState[`${i}-${j}`] || '';
+                    cell.onclick = () => selectCell(i, j);
+                    boardGrid.appendChild(cell);
+                }
+            }
+        }
+
+        // 選擇棋盤格子
+        function selectCell(x, y) {
+            addMessage(`選擇了位置 (${x}, ${y})`, 'info');
+        }
+
+        // 創建房間
+        function createRoom() {
+            const playerName = document.getElementById('player-name').value;
+            if (!playerName) {
+                alert('請輸入玩家名稱');
+                return;
+            }
+
+            const roomId = 'room_' + Math.random().toString(36).substr(2, 9);
+            rooms[roomId] = {
+                id: roomId,
+                creator: playerName,
+                players: [playerName],
+                createdAt: new Date()
+            };
+
+            currentRoom = roomId;
+            addMessage(`房間已創建：${roomId}`, 'success');
+            updateRoomList();
+            updatePlayerList();
+            startGame();
+        }
+
+        // 加入房間
+        function joinRoom() {
+            const roomId = document.getElementById('room-id').value;
+            const playerName = document.getElementById('player-name').value;
+
+            if (!roomId) {
+                alert('請輸入房間 ID');
+                return;
+            }
+
+            if (!playerName) {
+                alert('請輸入玩家名稱');
+                return;
+            }
+
+            if (!rooms[roomId]) {
+                alert('房間不存在');
+                return;
+            }
+
+            if (rooms[roomId].players.length >= 2) {
+                alert('房間已滿');
+                return;
+            }
+
+            rooms[roomId].players.push(playerName);
+            currentRoom = roomId;
+            addMessage(`已加入房間：${roomId}`, 'success');
+            updateRoomList();
+            updatePlayerList();
+            startGame();
+        }
+
+        // 離開房間
+        function leaveRoom() {
+            if (!currentRoom) {
+                alert('未加入任何房間');
+                return;
+            }
+
+            currentRoom = null;
+            moveHistory = [];
+            boardState = initializeBoardState();
+            currentPlayer = 'red';
+
+            addMessage('已離開房間', 'warning');
+            updateRoomList();
+            updatePlayerList();
+            stopGame();
+            renderBoard();
+        }
+
+        // 更新房間列表
+        function updateRoomList() {
+            const roomList = document.getElementById('room-list');
+            const roomArray = Object.values(rooms);
+
+            if (roomArray.length === 0) {
+                roomList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">暫無房間</div>';
+                return;
+            }
+
+            roomList.innerHTML = roomArray.map(room => `
+                <div class="room-item ${currentRoom === room.id ? 'selected' : ''}" onclick="selectRoom('${room.id}')">
+                    <div class="room-id">${room.id}</div>
+                    <div class="room-info">
+                        創建者：${room.creator} | 玩家：${room.players.length}/2
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 選擇房間
+        function selectRoom(roomId) {
+            const playerName = document.getElementById('player-name').value;
+            if (!playerName) {
+                alert('請輸入玩家名稱');
+                return;
+            }
+
+            const room = rooms[roomId];
+            if (room.players.length >= 2) {
+                alert('房間已滿');
+                return;
+            }
+
+            if (!room.players.includes(playerName)) {
+                room.players.push(playerName);
+            }
+
+            currentRoom = roomId;
+            document.getElementById('room-id').value = roomId;
+            addMessage(`已加入房間：${roomId}`, 'success');
+            updateRoomList();
+            updatePlayerList();
+            startGame();
+        }
+
+        // 更新玩家列表
+        function updatePlayerList() {
+            const playerList = document.getElementById('player-list');
+
+            if (!currentRoom) {
+                playerList.innerHTML = '<div style="text-align: center; color: #999; padding: 10px;">未加入房間</div>';
+                document.getElementById('current-room-id').textContent = '-';
+                document.getElementById('player-count').textContent = '0/2';
+                document.getElementById('room-status').textContent = '未加入';
+                return;
+            }
+
+            const room = rooms[currentRoom];
+            playerList.innerHTML = room.players.map(name => `
+                <div class="player-item">
+                    <span class="player-status online"></span>
+                    <span class="player-name">${name}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('current-room-id').textContent = currentRoom;
+            document.getElementById('player-count').textContent = `${room.players.length}/2`;
+            document.getElementById('room-status').textContent = room.players.length === 2 ? '進行中' : '等待中';
+        }
+
+        // 開始遊戲
+        function startGame() {
+            gameStartTime = Date.now();
+            gameTimer = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
+                document.getElementById('game-time').textContent = elapsed + 's';
+            }, 1000);
+
+            renderBoard();
+            addMessage('遊戲已開始', 'success');
+        }
+
+        // 停止遊戲
+        function stopGame() {
+            if (gameTimer) {
+                clearInterval(gameTimer);
+                gameTimer = null;
+            }
+            document.getElementById('game-time').textContent = '0s';
+        }
+
+        // 重新開始遊戲
+        function resetGame() {
+            if (!currentRoom) {
+                alert('請先加入房間');
+                return;
+            }
+
+            moveHistory = [];
+            boardState = initializeBoardState();
+            currentPlayer = 'red';
+
+            renderBoard();
+            updateMoveHistory();
+            addMessage('遊戲已重新開始', 'success');
+        }
+
+        // 悔棋
+        function undoMove() {
+            if (moveHistory.length === 0) {
+                alert('沒有可悔的棋');
+                return;
+            }
+
+            moveHistory.pop();
+            currentPlayer = currentPlayer === 'red' ? 'black' : 'red';
+            updateMoveHistory();
+            addMessage('已悔棋', 'info');
+        }
+
+        // 更新移動歷史
+        function updateMoveHistory() {
+            const moveHistoryDiv = document.getElementById('move-history');
+
+            if (moveHistory.length === 0) {
+                moveHistoryDiv.innerHTML = '<div style="text-align: center; color: #999;">暫無移動</div>';
+                return;
+            }
+
+            moveHistoryDiv.innerHTML = moveHistory.map((move, index) => `
+                <div class="move-item">第 ${index + 1} 步：${move}</div>
+            `).join('');
+
+            moveHistoryDiv.scrollTop = moveHistoryDiv.scrollHeight;
+        }
+
+        // 添加消息
+        function addMessage(message, type = 'info') {
+            const messageBox = document.getElementById('message-box');
+            const messageItem = document.createElement('div');
+            messageItem.className = `message-item ${type}`;
+            messageItem.textContent = `[${new Date().toLocaleTimeString('zh-CN')}] ${message}`;
+            messageBox.appendChild(messageItem);
+            messageBox.scrollTop = messageBox.scrollHeight;
+
+            // 限制消息數量
+            while (messageBox.children.length > 50) {
+                messageBox.removeChild(messageBox.firstChild);
+            }
+        }
+
+        // 清空消息
+        function clearMessages() {
+            document.getElementById('message-box').innerHTML = '';
+            addMessage('消息已清空', 'info');
+        }
+
+        // 切換標籤
+        function switchTab(tabName) {
+            // 隱藏所有標籤
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // 顯示選中的標籤
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // 初始化
+        window.addEventListener('load', () => {
+            renderBoard();
+            updateRoomList();
+            updatePlayerList();
+            addMessage('應用已啟動', 'success');
+        });
+
+        // 定期更新房間列表
+        setInterval(() => {
+            updateRoomList();
+        }, 2000);
+    </script>
+</body>
+</html>

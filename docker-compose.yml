@@ -1,0 +1,71 @@
+# 象棋线上对战 Docker Compose 配置
+# 
+# 用于本地开发和测试
+
+version: '3.8'
+
+services:
+  # 象棋线上对战服务器
+  xiangqi-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    # 容器名称
+    container_name: xiangqi-server
+    
+    # 端口映射
+    ports:
+      - "3000:3000"
+    
+    # 环境变量
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      LOG_LEVEL: info
+      HEARTBEAT_INTERVAL: 30000
+      HEARTBEAT_TIMEOUT: 60000
+      RECONNECT_INITIAL_DELAY: 1000
+      RECONNECT_MAX_DELAY: 30000
+      MAX_PLAYERS_PER_ROOM: 2
+      ROOM_IDLE_TIMEOUT: 3600000
+      MOVE_TIMEOUT: 30000
+      ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:8000,http://127.0.0.1:3000,http://127.0.0.1:8000"
+    
+    # 卷挂载
+    volumes:
+      - ./server/src:/app/server/src
+      - ./server/dist:/app/server/dist
+    
+    # 重启策略
+    restart: unless-stopped
+    
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # 日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 可选：Redis 缓存（用于生产环境）
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: xiangqi-redis
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis-data:/data
+  #   restart: unless-stopped
+
+# 卷定义
+# volumes:
+#   redis-data:
+

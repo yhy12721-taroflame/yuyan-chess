@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>象棋線上對戰 - 測試頁面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .panel h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: monospace;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #da190b;
+        }
+
+        .status-box {
+            background: #f5f5f5;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .status-box.connected {
+            border-left-color: #4CAF50;
+            background: #f1f8f4;
+        }
+
+        .status-box.disconnected {
+            border-left-color: #f44336;
+            background: #fef5f5;
+        }
+
+        .status-box.connecting {
+            border-left-color: #ff9800;
+            background: #fff8f3;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .status-indicator.connected {
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.disconnected {
+            background: #f44336;
+        }
+
+        .status-indicator.connecting {
+            background: #ff9800;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .log-box {
+            background: #1e1e1e;
+            color: #00ff00;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 3px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .log-entry.info {
+            color: #00ff00;
+        }
+
+        .log-entry.error {
+            color: #ff4444;
+        }
+
+        .log-entry.warning {
+            color: #ffaa00;
+        }
+
+        .log-entry.success {
+            color: #44ff44;
+        }
+
+        .log-entry.debug {
+            color: #aaaaaa;
+        }
+
+        .log-timestamp {
+            color: #666;
+            margin-right: 10px;
+        }
+
+        .message-display {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .room-info {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .room-info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .room-info-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .room-info-label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .room-info-value {
+            color: #667eea;
+            font-family: monospace;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .footer {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .clear-btn {
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .player-list {
+            background: #f5f5f5;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
+        .player-item {
+            padding: 8px;
+            margin-bottom: 5px;
+            background: white;
+            border-radius: 3px;
+            border-left: 3px solid #667eea;
+            font-size: 13px;
+        }
+
+        .player-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .player-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .player-id {
+            color: #999;
+            font-size: 11px;
+            font-family: monospace;
+        }
+
+        .player-status {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+
+        .player-status.online {
+            background: #4CAF50;
+        }
+
+        .player-status.offline {
+            background: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 頁面標題 -->
+        <div class="header">
+            <h1>🎮 象棋線上對戰 - 測試頁面</h1>
+            <p>用於測試 WebSocket 連接和遊戲功能的測試界面</p>
+        </div>
+
+        <!-- 主要內容 -->
+        <div class="main-content">
+            <!-- 左側：連接和房間管理 -->
+            <div class="panel">
+                <h2>連接和房間管理</h2>
+
+                <!-- 連接狀態 -->
+                <div class="status-box" id="connection-status">
+                    <span class="status-indicator disconnected"></span>
+                    <span>連接狀態：<strong>未連接</strong></span>
+                </div>
+
+                <!-- 服務器配置 -->
+                <div class="form-group">
+                    <label>服務器地址</label>
+                    <input type="text" id="server-url" value="ws://localhost:8080" placeholder="ws://localhost:8080">
+                </div>
+
+                <!-- 玩家名稱 -->
+                <div class="form-group">
+                    <label>玩家名稱</label>
+                    <input type="text" id="player-name" placeholder="輸入你的名稱" value="測試玩家">
+                </div>
+
+                <!-- 連接按鈕 -->
+                <div class="button-group">
+                    <button class="btn-primary" onclick="connectToServer()">連接</button>
+                    <button class="btn-danger" onclick="disconnectFromServer()">斷開</button>
+                </div>
+
+                <!-- 房間操作 -->
+                <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+
+                <div class="form-group">
+                    <label>房間 ID</label>
+                    <input type="text" id="room-id" placeholder="輸入房間 ID 或留空自動生成">
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-success" onclick="createRoom()">創建房間</button>
+                    <button class="btn-primary" onclick="joinRoom()">加入房間</button>
+                </div>
+
+                <!-- 房間信息 -->
+                <div class="room-info" id="room-info" style="display: none;">
+                    <div class="room-info-item">
+                        <span class="room-info-label">房間 ID：</span>
+                        <span class="room-info-value" id="current-room-id">-</span>
+                    </div>
+                    <div class="room-info-item">
+                        <span class="room-info-label">玩家 ID：</span>
+                        <span class="room-info-value" id="current-player-id">-</span>
+                    </div>
+                    <div class="room-info-item">
+                        <span class="room-info-label">玩家數量：</span>
+                        <span class="room-info-value" id="player-count">0/2</span>
+                    </div>
+                    <div class="room-info-item">
+                        <span class="room-info-label">房間狀態：</span>
+                        <span class="room-info-value" id="room-status">等待中</span>
+                    </div>
+                </div>
+
+                <!-- 玩家列表 -->
+                <div class="player-list" id="player-list" style="display: none;">
+                    <strong style="display: block; margin-bottom: 10px;">房間玩家：</strong>
+                    <div id="players-container"></div>
+                </div>
+
+                <!-- 離開房間 -->
+                <button class="btn-danger" onclick="leaveRoom()" style="width: 100%; margin-top: 10px;">離開房間</button>
+            </div>
+
+            <!-- 右側：消息和日誌 -->
+            <div class="panel">
+                <h2>消息和日誌</h2>
+
+                <!-- 統計信息 -->
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-label">已發送消息</div>
+                        <div class="stat-value" id="sent-count">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">已接收消息</div>
+                        <div class="stat-value" id="received-count">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">隊列中的消息</div>
+                        <div class="stat-value" id="queue-count">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">連接時長</div>
+                        <div class="stat-value" id="connection-time">0s</div>
+                    </div>
+                </div>
+
+                <!-- 最後接收的消息 -->
+                <div class="form-group">
+                    <label>最後接收的消息</label>
+                    <div class="message-display" id="last-message">等待消息...</div>
+                </div>
+
+                <!-- 日誌 -->
+                <div class="form-group">
+                    <label>日誌</label>
+                    <div class="log-box" id="log-box"></div>
+                    <button class="btn-secondary clear-btn" onclick="clearLog()">清空日誌</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 測試操作 -->
+        <div class="panel">
+            <h2>測試操作</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                <button class="btn-primary" onclick="sendHeartbeat()">發送心跳</button>
+                <button class="btn-primary" onclick="sendTestMessage()">發送測試消息</button>
+                <button class="btn-primary" onclick="sendMove()">發送移動</button>
+                <button class="btn-primary" onclick="requestGameState()">請求遊戲狀態</button>
+                <button class="btn-primary" onclick="requestRoomList()">請求房間列表</button>
+                <button class="btn-secondary" onclick="simulateNetworkDelay()">模擬網絡延遲</button>
+            </div>
+        </div>
+
+        <!-- 頁腳 -->
+        <div class="footer">
+            <p>象棋線上對戰測試頁面 | 用於開發和調試 | 最後更新：<span id="last-update">-</span></p>
+        </div>
+    </div>
+
+    <script>
+        // 全局變量
+        let ws = null;
+        let playerId = null;
+        let currentRoomId = null;
+        let sentCount = 0;
+        let receivedCount = 0;
+        let connectionStartTime = null;
+        let connectionTimer = null;
+
+        // 日誌函數
+        function addLog(message, type = 'info') {
+            const logBox = document.getElementById('log-box');
+            const timestamp = new Date().toLocaleTimeString('zh-CN');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.innerHTML = `<span class="log-timestamp">[${timestamp}]</span>${message}`;
+            logBox.appendChild(entry);
+            logBox.scrollTop = logBox.scrollHeight;
+
+            // 限制日誌條數
+            while (logBox.children.length > 100) {
+                logBox.removeChild(logBox.firstChild);
+            }
+
+            // 更新最後更新時間
+            document.getElementById('last-update').textContent = timestamp;
+        }
+
+        // 清空日誌
+        function clearLog() {
+            document.getElementById('log-box').innerHTML = '';
+            addLog('日誌已清空', 'info');
+        }
+
+        // 更新連接狀態
+        function updateConnectionStatus(status) {
+            const statusBox = document.getElementById('connection-status');
+            const indicator = statusBox.querySelector('.status-indicator');
+            const text = statusBox.querySelector('strong');
+
+            statusBox.className = `status-box ${status}`;
+            indicator.className = `status-indicator ${status}`;
+
+            switch (status) {
+                case 'connected':
+                    text.textContent = '已連接';
+                    connectionStartTime = Date.now();
+                    startConnectionTimer();
+                    break;
+                case 'disconnected':
+                    text.textContent = '未連接';
+                    stopConnectionTimer();
+                    break;
+                case 'connecting':
+                    text.textContent = '連接中...';
+                    break;
+            }
+        }
+
+        // 啟動連接計時器
+        function startConnectionTimer() {
+            connectionTimer = setInterval(() => {
+                if (connectionStartTime) {
+                    const elapsed = Math.floor((Date.now() - connectionStartTime) / 1000);
+                    document.getElementById('connection-time').textContent = elapsed + 's';
+                }
+            }, 1000);
+        }
+
+        // 停止連接計時器
+        function stopConnectionTimer() {
+            if (connectionTimer) {
+                clearInterval(connectionTimer);
+                connectionTimer = null;
+            }
+        }
+
+        // 連接到服務器
+        function connectToServer() {
+            const serverUrl = document.getElementById('server-url').value;
+            const playerName = document.getElementById('player-name').value;
+
+            if (!serverUrl) {
+                alert('請輸入服務器地址');
+                return;
+            }
+
+            if (!playerName) {
+                alert('請輸入玩家名稱');
+                return;
+            }
+
+            updateConnectionStatus('connecting');
+            addLog(`正在連接到 ${serverUrl}...`, 'info');
+
+            try {
+                ws = new WebSocket(serverUrl);
+
+                ws.onopen = () => {
+                    updateConnectionStatus('connected');
+                    addLog('已連接到服務器', 'success');
+
+                    // 發送連接消息
+                    const connectMsg = {
+                        type: 'connect',
+                        data: { playerName: playerName }
+                    };
+                    ws.send(JSON.stringify(connectMsg));
+                    sentCount++;
+                    updateStats();
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const message = JSON.parse(event.data);
+                        receivedCount++;
+                        updateStats();
+
+                        addLog(`收到消息: ${message.type}`, 'debug');
+                        document.getElementById('last-message').textContent = JSON.stringify(message, null, 2);
+
+                        // 處理特定消息類型
+                        if (message.type === 'connect_ack') {
+                            playerId = message.data.playerId;
+                            document.getElementById('current-player-id').textContent = playerId;
+                            addLog(`已獲得玩家 ID: ${playerId}`, 'success');
+                        }
+                    } catch (error) {
+                        addLog(`消息解析失敗: ${error.message}`, 'error');
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    addLog(`WebSocket 錯誤: ${error}`, 'error');
+                };
+
+                ws.onclose = () => {
+                    updateConnectionStatus('disconnected');
+                    addLog('已斷開連接', 'warning');
+                    ws = null;
+                    playerId = null;
+                    currentRoomId = null;
+                    document.getElementById('room-info').style.display = 'none';
+                    document.getElementById('player-list').style.display = 'none';
+                };
+            } catch (error) {
+                addLog(`連接失敗: ${error.message}`, 'error');
+                updateConnectionStatus('disconnected');
+            }
+        }
+
+        // 斷開連接
+        function disconnectFromServer() {
+            if (ws) {
+                ws.close();
+                addLog('正在斷開連接...', 'info');
+            } else {
+                addLog('未連接到服務器', 'warning');
+            }
+        }
+
+        // 創建房間
+        function createRoom() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('未連接到服務器');
+                return;
+            }
+
+            const playerName = document.getElementById('player-name').value;
+            const message = {
+                type: 'create_room',
+                data: { playerName: playerName }
+            };
+
+            ws.send(JSON.stringify(message));
+            sentCount++;
+            updateStats();
+            addLog('已發送創建房間請求', 'info');
+        }
+
+        // 加入房間
+        function joinRoom() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('未連接到服務器');
+                return;
+            }
+
+            const roomId = document.getElementById('room-id').value;
+            const playerName = document.getElementById('player-name').value;
+
+            if (!roomId) {
+                alert('請輸入房間 ID');
+                return;
+            }
+
+            currentRoomId = roomId;
+            const message = {
+                type: 'join_room',
+                data: { roomId: roomId, playerName: playerName }
+            };
+
+            ws.send(JSON.stringify(message));
+            sentCount++;
+            updateStats();
+            addLog(`已發送加入房間請求: ${roomId}`, 'info');
+
+            // 更新房間信息顯示
+            document.getElementById('room-info').style.display = 'block';
+            document.getElementById('current-room-id').textContent = roomId;
+            document.getElementById('player-list').style.display = 'block';
+        }
+
+        // 離開房間
+        function leaveRoom() {
+            if (!currentRoomId) {
+                alert('未加入任何房間');
+                return;
+            }
+
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('未連接到服務器');
+                return;
+            }
+
+            const message = {
+                type: 'leave_room',
+                data: { roomId: currentRoomId }
+            };
+
+            ws.send(JSON.stringify(message));
+            sentCount++;
+            updateStats();
+            addLog(`已發送離開房間請求: ${currentRoomId}`, 'info');
+
+            currentRoomId = null;
+            document.getElementById('room-info').style.display = 'none';
+            document.getElementById('player-list').style.display = 'none';
+        }
+
+        // 發送心跳
+        function sendHeartbeat() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('未連接到服務器');
+                return;
+            }
+
+            const message = {
+                type: 'heartbeat',
+                data: { timestamp: Date.now() }
+            };
+
+            ws.send(JSON.stringify(message));
+            sentCount++;
+            updateStats();
+            addLog('已發送心跳消息', 'debug');
+        }
+
+        // 發送測試消息
+        function sendTestMessage() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('未連接到服務器');
+                return;
+            }
+
+            const message = {
+                type: 'test',
+                data: { 
+                    message: '這是一條測試消息',
+                    timestamp: Date.now()
+                }
+            };
+
+            ws.send(JSON.stringify(message));
+            sentCount++;
+            updateStats();
+            addLog('已發送測試消息', 'info');
+        }
+
+        // 發送移動
+        function sendMove() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('未連接到服務器');
+                return;
+            }
+
+            if (!currentRoomId) {
+                alert('請先加入房間');
+                return;
+            }
+
+            const message = {
+                type: 'move',
+                data: {
+                    roomId: currentRoomId,
+                    from: { x: 0, y: 0 },
+                    to: { x: 1, y: 1 }
+                }
+            };
+
+            ws.send(JSON.stringify(message));
+            sentCount++;
+            updateStats();
+            addLog('已發送移動消息', 'info');
+        }
+
+        // 請求遊戲狀態
+        function requestGameState() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('未連接到服務器');
+                return;
+            }
+
+            if (!currentRoomId) {
+                alert('請先加入房間');
+                return;
+            }
+
+            const message = {
+                type: 'get_game_state',
+                data: { roomId: currentRoomId }
+            };
+
+            ws.send(JSON.stringify(message));
+            sentCount++;
+            updateStats();
+            addLog('已請求遊戲狀態', 'info');
+        }
+
+        // 請求房間列表
+        function requestRoomList() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('未連接到服務器');
+                return;
+            }
+
+            const message = {
+                type: 'get_room_list',
+                data: {}
+            };
+
+            ws.send(JSON.stringify(message));
+            sentCount++;
+            updateStats();
+            addLog('已請求房間列表', 'info');
+        }
+
+        // 模擬網絡延遲
+        function simulateNetworkDelay() {
+            addLog('模擬 2 秒網絡延遲...', 'warning');
+            setTimeout(() => {
+                addLog('網絡延遲模擬完成', 'success');
+            }, 2000);
+        }
+
+        // 更新統計信息
+        function updateStats() {
+            document.getElementById('sent-count').textContent = sentCount;
+            document.getElementById('received-count').textContent = receivedCount;
+            document.getElementById('queue-count').textContent = ws ? (ws.bufferedAmount || 0) : 0;
+        }
+
+        // 初始化
+        window.addEventListener('load', () => {
+            addLog('測試頁面已加載', 'success');
+            updateStats();
+        });
+
+        // 頁面卸載時斷開連接
+        window.addEventListener('beforeunload', () => {
+            if (ws) {
+                ws.close();
+            }
+        });
+    </script>
+</body>
+</html>

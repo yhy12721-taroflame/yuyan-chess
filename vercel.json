@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm run build:ui",
+  "outputDirectory": "public",
+  "framework": "static"
+}

@@ -1,0 +1,61 @@
+{
+  "version": 2,
+  "name": "xiangqi-server",
+  "description": "象棋线上对战服务器",
+  "buildCommand": "npm run server:build",
+  "outputDirectory": "server/dist",
+  "env": {
+    "NODE_ENV": "production",
+    "PORT": "3000",
+    "LOG_LEVEL": "info",
+    "HEARTBEAT_INTERVAL": "30000",
+    "HEARTBEAT_TIMEOUT": "60000",
+    "RECONNECT_INITIAL_DELAY": "1000",
+    "RECONNECT_MAX_DELAY": "30000",
+    "MAX_PLAYERS_PER_ROOM": "2",
+    "ROOM_IDLE_TIMEOUT": "3600000",
+    "MOVE_TIMEOUT": "30000"
+  },
+  "functions": {
+    "server/dist/server.js": {
+      "memory": 1024,
+      "maxDuration": 900
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "server/dist/server.js"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Credentials",
+          "value": "true"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/server/dist/server.js"
+    }
+  ]
+}
+
