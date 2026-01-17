@@ -631,7 +631,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const ui = new XiangqiUI();
   (window as any).xiangqiUI = ui;
   console.log('象棋游戏已加载！');
+  
+  // 初始化 WebSocket 连接
+  initializeWebSocket();
 });
+
+// 初始化 WebSocket 连接
+async function initializeWebSocket() {
+  try {
+    // 动态导入 WebSocket 客户端
+    const { WebSocketClient } = await import('./client/WebSocketClient');
+    
+    // 创建 WebSocket 客户端实例
+    const serverUrl = 'wss://yuyan.up.railway.app';
+    const wsClient = new WebSocketClient(serverUrl);
+    
+    // 连接到服务器
+    await wsClient.connect();
+    console.log('✓ WebSocket 已连接到服务器');
+    
+    // 保存到全局变量供后续使用
+    (window as any).wsClient = wsClient;
+  } catch (error) {
+    console.error('✗ WebSocket 连接失败:', error);
+  }
+}
 
 // 全局函数用于开始游戏
 function startGame() {
