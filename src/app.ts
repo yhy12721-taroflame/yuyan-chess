@@ -19,15 +19,15 @@ const PIECE_NAMES: Record<PieceType, { red: string; black: string }> = {
 };
 
 class XiangqiUI {
-  private board = createInitialBoard();
+  public board = createInitialBoard();
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private boardElement: HTMLElement;
-  private selectedPosition: Position | null = null;
-  private legalMoves: Position[] = [];
-  private currentPlayer: Color = Color.Red;
+  public selectedPosition: Position | null = null;
+  public legalMoves: Position[] = [];
+  public currentPlayer: Color = Color.Red;
   private invalidClickOverlay: { x: number; y: number; alpha: number } | null = null;
-  private isInCheck: boolean = false;
+  public isInCheck: boolean = false;
   
   // 棋盘尺寸参数
   private readonly PADDING = 40; // 边距
@@ -63,6 +63,67 @@ class XiangqiUI {
   public reinitialize(): void {
     this.initCanvas();
     this.render();
+  }
+
+  /**
+   * 更新信息显示（公开方法）
+   */
+  public updateInfo(): void {
+    const redCount = this.board.getPieceCountByColor(Color.Red);
+    const blackCount = this.board.getPieceCountByColor(Color.Black);
+    const totalCount = this.board.getPieceCount();
+
+    document.getElementById('red-count')!.textContent = redCount.toString();
+    document.getElementById('black-count')!.textContent = blackCount.toString();
+    document.getElementById('total-count')!.textContent = totalCount.toString();
+    
+    // 更新当前玩家显示
+    const playerIndicator = document.getElementById('player-indicator')!;
+    if (this.currentPlayer === Color.Red) {
+      playerIndicator.textContent = '🔴 当前玩家：红方';
+      playerIndicator.className = 'current-player-indicator red';
+    } else {
+      playerIndicator.textContent = '⚫ 当前玩家：黑方';
+      playerIndicator.className = 'current-player-indicator black';
+    }
+  }
+
+  /**
+   * 重新渲染棋盘（公开方法）
+   */
+  public render(): void {
+    // 清空画布
+    this.ctx.clearRect(0, 0, this.boardWidth, this.boardHeight);
+    
+    // 更新棋盘样式
+    this.updateBoardStyle();
+    
+    // 绘制棋盘线条
+    this.drawBoard();
+    
+    // 绘制河界文字
+    this.drawRiver();
+    
+    // 绘制选中高亮
+    if (this.selectedPosition) {
+      this.drawSelection(this.selectedPosition);
+    }
+    
+    // 绘制可移动位置
+    this.drawLegalMoves();
+    
+    // 绘制所有棋子
+    this.drawPieces();
+    
+    // 绘制可攻击的棋子红色边框
+    if (this.selectedPosition) {
+      this.drawAttackableTargets();
+    }
+    
+    // 绘制无效点击反馈
+    if (this.invalidClickOverlay) {
+      this.drawInvalidClickFeedback();
+    }
   }
 
   /**
@@ -143,44 +204,6 @@ class XiangqiUI {
       return { file, rank };
     }
     return null;
-  }
-
-  /**
-   * 渲染整个棋盘
-   */
-  private render(): void {
-    // 清空画布
-    this.ctx.clearRect(0, 0, this.boardWidth, this.boardHeight);
-    
-    // 更新棋盘样式
-    this.updateBoardStyle();
-    
-    // 绘制棋盘线条
-    this.drawBoard();
-    
-    // 绘制河界文字
-    this.drawRiver();
-    
-    // 绘制选中高亮
-    if (this.selectedPosition) {
-      this.drawSelection(this.selectedPosition);
-    }
-    
-    // 绘制可移动位置
-    this.drawLegalMoves();
-    
-    // 绘制所有棋子
-    this.drawPieces();
-    
-    // 绘制可攻击的棋子红色边框
-    if (this.selectedPosition) {
-      this.drawAttackableTargets();
-    }
-    
-    // 绘制无效点击反馈
-    if (this.invalidClickOverlay) {
-      this.drawInvalidClickFeedback();
-    }
   }
 
   /**
@@ -575,6 +598,17 @@ class XiangqiUI {
           
           console.log(`${selectedPiece.color === Color.Red ? '红' : '黑'}方移动: ${this.selectedPosition.toString()} -> ${pos.toString()}`);
           
+          // 发送移动消息到服务器
+          if ((window as any).wsClient) {
+            (window as any).wsClient.send({
+              type: 'move',
+              data: {
+                from: this.selectedPosition.toString(),
+                to: pos.toString()
+              }
+            });
+          }
+          
           this.selectedPosition = null;
           this.legalMoves = [];
           this.updateInfo();
@@ -603,27 +637,8 @@ class XiangqiUI {
   }
 
   /**
-   * 更新信息显示
+   * 初始化应用
    */
-  private updateInfo(): void {
-    const redCount = this.board.getPieceCountByColor(Color.Red);
-    const blackCount = this.board.getPieceCountByColor(Color.Black);
-    const totalCount = this.board.getPieceCount();
-
-    document.getElementById('red-count')!.textContent = redCount.toString();
-    document.getElementById('black-count')!.textContent = blackCount.toString();
-    document.getElementById('total-count')!.textContent = totalCount.toString();
-    
-    // 更新当前玩家显示
-    const playerIndicator = document.getElementById('player-indicator')!;
-    if (this.currentPlayer === Color.Red) {
-      playerIndicator.textContent = '🔴 当前玩家：红方';
-      playerIndicator.className = 'current-player-indicator red';
-    } else {
-      playerIndicator.textContent = '⚫ 当前玩家：黑方';
-      playerIndicator.className = 'current-player-indicator black';
-    }
-  }
 }
 
 // 初始化应用
@@ -650,10 +665,62 @@ async function initializeWebSocket() {
     await wsClient.connect();
     console.log('✓ WebSocket 已连接到服务器');
     
+    // 注册消息处理器 - 监听移动消息
+    wsClient.on('move_made', (data: any) => {
+      console.log(`[远程移动] ${data.from} -> ${data.to}`);
+      applyRemoteMove(data.from, data.to);
+    });
+    
     // 保存到全局变量供后续使用
     (window as any).wsClient = wsClient;
   } catch (error) {
     console.error('✗ WebSocket 连接失败:', error);
+  }
+}
+
+/**
+ * 应用远程移动（来自其他玩家的移动）
+ */
+function applyRemoteMove(fromStr: string, toStr: string): void {
+  const ui = (window as any).xiangqiUI;
+  if (!ui) return;
+  
+  try {
+    // 解析位置字符串 (格式: "file,rank")
+    const [fromFile, fromRank] = fromStr.split(',').map(Number);
+    const [toFile, toRank] = toStr.split(',').map(Number);
+    
+    const fromPos = new Position(fromFile, fromRank);
+    const toPos = new Position(toFile, toRank);
+    
+    // 获取要移动的棋子
+    const piece = ui.board.getPiece(fromPos);
+    if (!piece) {
+      console.error(`[远程移动] 源位置没有棋子: ${fromStr}`);
+      return;
+    }
+    
+    // 执行移动
+    ui.board = ui.board.setPiece(fromPos, null);
+    ui.board = ui.board.setPiece(toPos, piece);
+    
+    // 切换玩家
+    ui.currentPlayer = ui.currentPlayer === Color.Red ? Color.Black : Color.Red;
+    
+    // 检测新玩家是否被将军
+    ui.isInCheck = MoveValidator.isInCheck(ui.board, ui.currentPlayer);
+    
+    console.log(`[远程移动] 已应用: ${piece.color === Color.Red ? '红' : '黑'}方 ${fromStr} -> ${toStr}`);
+    
+    // 清除选中状态
+    ui.selectedPosition = null;
+    ui.legalMoves = [];
+    
+    // 更新信息显示和重新渲染
+    ui.updateInfo();
+    ui.render();
+  } catch (error) {
+    console.error('[远程移动] 应用移动时出错:', error);
   }
 }
 

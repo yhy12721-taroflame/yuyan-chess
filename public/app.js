@@ -820,6 +820,45 @@
       this.render();
     }
     /**
+     * 更新信息显示（公开方法）
+     */
+    updateInfo() {
+      const redCount = this.board.getPieceCountByColor("RED" /* Red */);
+      const blackCount = this.board.getPieceCountByColor("BLACK" /* Black */);
+      const totalCount = this.board.getPieceCount();
+      document.getElementById("red-count").textContent = redCount.toString();
+      document.getElementById("black-count").textContent = blackCount.toString();
+      document.getElementById("total-count").textContent = totalCount.toString();
+      const playerIndicator = document.getElementById("player-indicator");
+      if (this.currentPlayer === "RED" /* Red */) {
+        playerIndicator.textContent = "\u{1F534} \u5F53\u524D\u73A9\u5BB6\uFF1A\u7EA2\u65B9";
+        playerIndicator.className = "current-player-indicator red";
+      } else {
+        playerIndicator.textContent = "\u26AB \u5F53\u524D\u73A9\u5BB6\uFF1A\u9ED1\u65B9";
+        playerIndicator.className = "current-player-indicator black";
+      }
+    }
+    /**
+     * 重新渲染棋盘（公开方法）
+     */
+    render() {
+      this.ctx.clearRect(0, 0, this.boardWidth, this.boardHeight);
+      this.updateBoardStyle();
+      this.drawBoard();
+      this.drawRiver();
+      if (this.selectedPosition) {
+        this.drawSelection(this.selectedPosition);
+      }
+      this.drawLegalMoves();
+      this.drawPieces();
+      if (this.selectedPosition) {
+        this.drawAttackableTargets();
+      }
+      if (this.invalidClickOverlay) {
+        this.drawInvalidClickFeedback();
+      }
+    }
+    /**
      * 更新棋盘样式（背景颜色）
      */
     updateBoardStyle() {
@@ -880,26 +919,6 @@
         return { file, rank };
       }
       return null;
-    }
-    /**
-     * 渲染整个棋盘
-     */
-    render() {
-      this.ctx.clearRect(0, 0, this.boardWidth, this.boardHeight);
-      this.updateBoardStyle();
-      this.drawBoard();
-      this.drawRiver();
-      if (this.selectedPosition) {
-        this.drawSelection(this.selectedPosition);
-      }
-      this.drawLegalMoves();
-      this.drawPieces();
-      if (this.selectedPosition) {
-        this.drawAttackableTargets();
-      }
-      if (this.invalidClickOverlay) {
-        this.drawInvalidClickFeedback();
-      }
     }
     /**
      * 绘制棋盘线条
@@ -1186,6 +1205,15 @@
             this.currentPlayer = this.currentPlayer === "RED" /* Red */ ? "BLACK" /* Black */ : "RED" /* Red */;
             this.isInCheck = MoveValidator.isInCheck(this.board, this.currentPlayer);
             console.log(`${selectedPiece.color === "RED" /* Red */ ? "\u7EA2" : "\u9ED1"}\u65B9\u79FB\u52A8: ${this.selectedPosition.toString()} -> ${pos.toString()}`);
+            if (window.wsClient) {
+              window.wsClient.send({
+                type: "move",
+                data: {
+                  from: this.selectedPosition.toString(),
+                  to: pos.toString()
+                }
+              });
+            }
             this.selectedPosition = null;
             this.legalMoves = [];
             this.updateInfo();
@@ -1209,24 +1237,8 @@
       }
     }
     /**
-     * 更新信息显示
+     * 初始化应用
      */
-    updateInfo() {
-      const redCount = this.board.getPieceCountByColor("RED" /* Red */);
-      const blackCount = this.board.getPieceCountByColor("BLACK" /* Black */);
-      const totalCount = this.board.getPieceCount();
-      document.getElementById("red-count").textContent = redCount.toString();
-      document.getElementById("black-count").textContent = blackCount.toString();
-      document.getElementById("total-count").textContent = totalCount.toString();
-      const playerIndicator = document.getElementById("player-indicator");
-      if (this.currentPlayer === "RED" /* Red */) {
-        playerIndicator.textContent = "\u{1F534} \u5F53\u524D\u73A9\u5BB6\uFF1A\u7EA2\u65B9";
-        playerIndicator.className = "current-player-indicator red";
-      } else {
-        playerIndicator.textContent = "\u26AB \u5F53\u524D\u73A9\u5BB6\uFF1A\u9ED1\u65B9";
-        playerIndicator.className = "current-player-indicator black";
-      }
-    }
   };
   document.addEventListener("DOMContentLoaded", () => {
     const ui = new XiangqiUI();
@@ -1241,9 +1253,39 @@
       const wsClient = new WebSocketClient(serverUrl);
       await wsClient.connect();
       console.log("\u2713 WebSocket \u5DF2\u8FDE\u63A5\u5230\u670D\u52A1\u5668");
+      wsClient.on("move_made", (data) => {
+        console.log(`[\u8FDC\u7A0B\u79FB\u52A8] ${data.from} -> ${data.to}`);
+        applyRemoteMove(data.from, data.to);
+      });
       window.wsClient = wsClient;
     } catch (error) {
       console.error("\u2717 WebSocket \u8FDE\u63A5\u5931\u8D25:", error);
+    }
+  }
+  function applyRemoteMove(fromStr, toStr) {
+    const ui = window.xiangqiUI;
+    if (!ui) return;
+    try {
+      const [fromFile, fromRank] = fromStr.split(",").map(Number);
+      const [toFile, toRank] = toStr.split(",").map(Number);
+      const fromPos = new Position(fromFile, fromRank);
+      const toPos = new Position(toFile, toRank);
+      const piece = ui.board.getPiece(fromPos);
+      if (!piece) {
+        console.error(`[\u8FDC\u7A0B\u79FB\u52A8] \u6E90\u4F4D\u7F6E\u6CA1\u6709\u68CB\u5B50: ${fromStr}`);
+        return;
+      }
+      ui.board = ui.board.setPiece(fromPos, null);
+      ui.board = ui.board.setPiece(toPos, piece);
+      ui.currentPlayer = ui.currentPlayer === "RED" /* Red */ ? "BLACK" /* Black */ : "RED" /* Red */;
+      ui.isInCheck = MoveValidator.isInCheck(ui.board, ui.currentPlayer);
+      console.log(`[\u8FDC\u7A0B\u79FB\u52A8] \u5DF2\u5E94\u7528: ${piece.color === "RED" /* Red */ ? "\u7EA2" : "\u9ED1"}\u65B9 ${fromStr} -> ${toStr}`);
+      ui.selectedPosition = null;
+      ui.legalMoves = [];
+      ui.updateInfo();
+      ui.render();
+    } catch (error) {
+      console.error("[\u8FDC\u7A0B\u79FB\u52A8] \u5E94\u7528\u79FB\u52A8\u65F6\u51FA\u9519:", error);
     }
   }
 })();
