@@ -686,9 +686,15 @@ function applyRemoteMove(fromStr: string, toStr: string): void {
   if (!ui) return;
   
   try {
-    // 解析位置字符串 (格式: "file,rank")
-    const [fromFile, fromRank] = fromStr.split(',').map(Number);
-    const [toFile, toRank] = toStr.split(',').map(Number);
+    // 解析位置字符串 (格式: "(file, rank)")
+    const parsePosition = (posStr: string) => {
+      const match = posStr.match(/\((\d+),\s*(\d+)\)/);
+      if (!match) throw new Error(`无效的位置格式: ${posStr}`);
+      return { file: parseInt(match[1]), rank: parseInt(match[2]) };
+    };
+    
+    const { file: fromFile, rank: fromRank } = parsePosition(fromStr);
+    const { file: toFile, rank: toRank } = parsePosition(toStr);
     
     const fromPos = new Position(fromFile, fromRank);
     const toPos = new Position(toFile, toRank);

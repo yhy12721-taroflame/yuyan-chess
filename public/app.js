@@ -1266,8 +1266,13 @@
     const ui = window.xiangqiUI;
     if (!ui) return;
     try {
-      const [fromFile, fromRank] = fromStr.split(",").map(Number);
-      const [toFile, toRank] = toStr.split(",").map(Number);
+      const parsePosition = (posStr) => {
+        const match = posStr.match(/\((\d+),\s*(\d+)\)/);
+        if (!match) throw new Error(`\u65E0\u6548\u7684\u4F4D\u7F6E\u683C\u5F0F: ${posStr}`);
+        return { file: parseInt(match[1]), rank: parseInt(match[2]) };
+      };
+      const { file: fromFile, rank: fromRank } = parsePosition(fromStr);
+      const { file: toFile, rank: toRank } = parsePosition(toStr);
       const fromPos = new Position(fromFile, fromRank);
       const toPos = new Position(toFile, toRank);
       const piece = ui.board.getPiece(fromPos);
