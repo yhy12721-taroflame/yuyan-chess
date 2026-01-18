@@ -1206,6 +1206,10 @@
             this.isInCheck = MoveValidator.isInCheck(this.board, this.currentPlayer);
             console.log(`${selectedPiece.color === "RED" /* Red */ ? "\u7EA2" : "\u9ED1"}\u65B9\u79FB\u52A8: ${this.selectedPosition.toString()} -> ${pos.toString()}`);
             if (window.wsClient) {
+              console.log("[\u79FB\u52A8] \u53D1\u9001\u79FB\u52A8\u6D88\u606F\u5230\u670D\u52A1\u5668:", {
+                from: this.selectedPosition.toString(),
+                to: pos.toString()
+              });
               window.wsClient.send({
                 type: "move",
                 data: {
@@ -1213,6 +1217,8 @@
                   to: pos.toString()
                 }
               });
+            } else {
+              console.warn("[\u79FB\u52A8] WebSocket \u5BA2\u6237\u7AEF\u672A\u521D\u59CB\u5316");
             }
             this.selectedPosition = null;
             this.legalMoves = [];
@@ -1251,24 +1257,31 @@
       const { WebSocketClient } = await import("./client/WebSocketClient");
       const serverUrl = "wss://yuyan.up.railway.app";
       const wsClient = new WebSocketClient(serverUrl);
+      console.log("[WebSocket] \u6B63\u5728\u8FDE\u63A5\u5230\u670D\u52A1\u5668:", serverUrl);
       await wsClient.connect();
-      console.log("\u2713 WebSocket \u5DF2\u8FDE\u63A5\u5230\u670D\u52A1\u5668");
+      console.log("\u2713 WebSocket \u5DF2\u8FDE\u63A5\u5230\u670D\u52A1\u5668\uFF0C\u73A9\u5BB6ID:", wsClient.getPlayerId());
       wsClient.on("move_made", (data) => {
-        console.log(`[\u8FDC\u7A0B\u79FB\u52A8] ${data.from} -> ${data.to}\uFF0C\u73A9\u5BB6ID: ${data.playerId}`);
+        console.log(`[move_made \u6D88\u606F] \u4ECE ${data.from} \u5230 ${data.to}\uFF0C\u73A9\u5BB6ID: ${data.playerId}\uFF0C\u6211\u7684ID: ${wsClient.getPlayerId()}`);
         if (data.playerId !== wsClient.getPlayerId()) {
+          console.log("[\u8FDC\u7A0B\u79FB\u52A8] \u5E94\u7528\u6765\u81EA\u5176\u4ED6\u73A9\u5BB6\u7684\u79FB\u52A8");
           applyRemoteMove(data.from, data.to);
         } else {
           console.log("[\u8FDC\u7A0B\u79FB\u52A8] \u5FFD\u7565\u81EA\u5DF1\u7684\u79FB\u52A8");
         }
       });
       window.wsClient = wsClient;
+      console.log("[WebSocket] \u521D\u59CB\u5316\u5B8C\u6210");
     } catch (error) {
       console.error("\u2717 WebSocket \u8FDE\u63A5\u5931\u8D25:", error);
     }
   }
   function applyRemoteMove(fromStr, toStr) {
     const ui = window.xiangqiUI;
-    if (!ui) return;
+    if (!ui) {
+      console.error("[\u8FDC\u7A0B\u79FB\u52A8] UI \u672A\u521D\u59CB\u5316");
+      return;
+    }
+    console.log("[\u8FDC\u7A0B\u79FB\u52A8] \u5F00\u59CB\u5E94\u7528\u79FB\u52A8:", fromStr, "->", toStr);
     try {
       const parsePosition = (posStr) => {
         const match = posStr.match(/\((\d+),\s*(\d+)\)/);
@@ -1277,6 +1290,7 @@
       };
       const { file: fromFile, rank: fromRank } = parsePosition(fromStr);
       const { file: toFile, rank: toRank } = parsePosition(toStr);
+      console.log("[\u8FDC\u7A0B\u79FB\u52A8] \u89E3\u6790\u4F4D\u7F6E\u6210\u529F:", { fromFile, fromRank, toFile, toRank });
       const fromPos = new Position(fromFile, fromRank);
       const toPos = new Position(toFile, toRank);
       const piece = ui.board.getPiece(fromPos);
@@ -1284,6 +1298,7 @@
         console.error(`[\u8FDC\u7A0B\u79FB\u52A8] \u6E90\u4F4D\u7F6E\u6CA1\u6709\u68CB\u5B50: ${fromStr}`);
         return;
       }
+      console.log("[\u8FDC\u7A0B\u79FB\u52A8] \u627E\u5230\u68CB\u5B50:", piece.toString());
       ui.board = ui.board.setPiece(fromPos, null);
       ui.board = ui.board.setPiece(toPos, piece);
       ui.currentPlayer = ui.currentPlayer === "RED" /* Red */ ? "BLACK" /* Black */ : "RED" /* Red */;
@@ -1293,6 +1308,7 @@
       ui.legalMoves = [];
       ui.updateInfo();
       ui.render();
+      console.log("[\u8FDC\u7A0B\u79FB\u52A8] \u5B8C\u6210");
     } catch (error) {
       console.error("[\u8FDC\u7A0B\u79FB\u52A8] \u5E94\u7528\u79FB\u52A8\u65F6\u51FA\u9519:", error);
     }

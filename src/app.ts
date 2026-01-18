@@ -600,6 +600,10 @@ class XiangqiUI {
           
           // 发送移动消息到服务器
           if ((window as any).wsClient) {
+            console.log('[移动] 发送移动消息到服务器:', {
+              from: this.selectedPosition.toString(),
+              to: pos.toString()
+            });
             (window as any).wsClient.send({
               type: 'move',
               data: {
@@ -607,6 +611,8 @@ class XiangqiUI {
                 to: pos.toString()
               }
             });
+          } else {
+            console.warn('[移动] WebSocket 客户端未初始化');
           }
           
           this.selectedPosition = null;
@@ -661,15 +667,18 @@ async function initializeWebSocket() {
     const serverUrl = 'wss://yuyan.up.railway.app';
     const wsClient = new WebSocketClient(serverUrl);
     
+    console.log('[WebSocket] 正在连接到服务器:', serverUrl);
+    
     // 连接到服务器
     await wsClient.connect();
-    console.log('✓ WebSocket 已连接到服务器');
+    console.log('✓ WebSocket 已连接到服务器，玩家ID:', wsClient.getPlayerId());
     
     // 注册消息处理器 - 监听移动消息
     wsClient.on('move_made', (data: any) => {
-      console.log(`[远程移动] ${data.from} -> ${data.to}，玩家ID: ${data.playerId}`);
+      console.log(`[move_made 消息] 从 ${data.from} 到 ${data.to}，玩家ID: ${data.playerId}，我的ID: ${wsClient.getPlayerId()}`);
       // 只应用来自其他玩家的移动，忽略自己的移动
       if (data.playerId !== wsClient.getPlayerId()) {
+        console.log('[远程移动] 应用来自其他玩家的移动');
         applyRemoteMove(data.from, data.to);
       } else {
         console.log('[远程移动] 忽略自己的移动');
@@ -678,6 +687,7 @@ async function initializeWebSocket() {
     
     // 保存到全局变量供后续使用
     (window as any).wsClient = wsClient;
+    console.log('[WebSocket] 初始化完成');
   } catch (error) {
     console.error('✗ WebSocket 连接失败:', error);
   }
@@ -688,7 +698,12 @@ async function initializeWebSocket() {
  */
 function applyRemoteMove(fromStr: string, toStr: string): void {
   const ui = (window as any).xiangqiUI;
-  if (!ui) return;
+  if (!ui) {
+    console.error('[远程移动] UI 未初始化');
+    return;
+  }
+  
+  console.log('[远程移动] 开始应用移动:', fromStr, '->', toStr);
   
   try {
     // 解析位置字符串 (格式: "(file, rank)")
@@ -701,6 +716,8 @@ function applyRemoteMove(fromStr: string, toStr: string): void {
     const { file: fromFile, rank: fromRank } = parsePosition(fromStr);
     const { file: toFile, rank: toRank } = parsePosition(toStr);
     
+    console.log('[远程移动] 解析位置成功:', { fromFile, fromRank, toFile, toRank });
+    
     const fromPos = new Position(fromFile, fromRank);
     const toPos = new Position(toFile, toRank);
     
@@ -710,6 +727,8 @@ function applyRemoteMove(fromStr: string, toStr: string): void {
       console.error(`[远程移动] 源位置没有棋子: ${fromStr}`);
       return;
     }
+    
+    console.log('[远程移动] 找到棋子:', piece.toString());
     
     // 执行移动
     ui.board = ui.board.setPiece(fromPos, null);
@@ -730,6 +749,8 @@ function applyRemoteMove(fromStr: string, toStr: string): void {
     // 更新信息显示和重新渲染
     ui.updateInfo();
     ui.render();
+    
+    console.log('[远程移动] 完成');
   } catch (error) {
     console.error('[远程移动] 应用移动时出错:', error);
   }
