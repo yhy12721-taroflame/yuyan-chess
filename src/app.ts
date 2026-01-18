@@ -667,8 +667,13 @@ async function initializeWebSocket() {
     
     // 注册消息处理器 - 监听移动消息
     wsClient.on('move_made', (data: any) => {
-      console.log(`[远程移动] ${data.from} -> ${data.to}`);
-      applyRemoteMove(data.from, data.to);
+      console.log(`[远程移动] ${data.from} -> ${data.to}，玩家ID: ${data.playerId}`);
+      // 只应用来自其他玩家的移动，忽略自己的移动
+      if (data.playerId !== wsClient.getPlayerId()) {
+        applyRemoteMove(data.from, data.to);
+      } else {
+        console.log('[远程移动] 忽略自己的移动');
+      }
     });
     
     // 保存到全局变量供后续使用

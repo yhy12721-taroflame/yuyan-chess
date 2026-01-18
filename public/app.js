@@ -1254,8 +1254,12 @@
       await wsClient.connect();
       console.log("\u2713 WebSocket \u5DF2\u8FDE\u63A5\u5230\u670D\u52A1\u5668");
       wsClient.on("move_made", (data) => {
-        console.log(`[\u8FDC\u7A0B\u79FB\u52A8] ${data.from} -> ${data.to}`);
-        applyRemoteMove(data.from, data.to);
+        console.log(`[\u8FDC\u7A0B\u79FB\u52A8] ${data.from} -> ${data.to}\uFF0C\u73A9\u5BB6ID: ${data.playerId}`);
+        if (data.playerId !== wsClient.getPlayerId()) {
+          applyRemoteMove(data.from, data.to);
+        } else {
+          console.log("[\u8FDC\u7A0B\u79FB\u52A8] \u5FFD\u7565\u81EA\u5DF1\u7684\u79FB\u52A8");
+        }
       });
       window.wsClient = wsClient;
     } catch (error) {
